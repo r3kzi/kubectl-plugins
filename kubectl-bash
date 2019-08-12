@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+if [ "$1" == "--help" ]; then
+  echo "When you want to access kubernetes resources inside a cluster, you either:"
+  echo "a) need to expose them via e.g. an Ingress"
+  echo "b) run kube-proxy"
+  echo "c) forward ports between your local machine and services running inside the cluster."
+  echo
+  echo "Via kubectl bash you can run plain curl command without exposing any services or forwarding ports."
+  echo
+  echo "It works by running a pod with radial/busyboxplus:curl image inside the cluster."
+  echo
+  echo "Usage:"
+  echo "  kubectl bash"
+  exit 0
+fi
+
+kubectl get pod curl > /dev/null 2>&1
+rc=$?
+
+if [ $rc -ne 0 ]; then
+  echo "Not running, creating a new one"
+  kubectl run curl --stdin --tty --generator=run-pod/v1 --image=radial/busyboxplus:curl
+else
+  echo "Attaching to existing pod..."
+  POD=$(kubectl get pods --selector=run=curl -o jsonpath='{.items[*].metadata.name}')
+  kubectl attach "${POD}" --container curl --stdin --tty
+fi
