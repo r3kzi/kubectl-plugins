@@ -20,7 +20,7 @@ rc=$?
 
 if [ $rc -ne 0 ]; then
   echo "Not running, creating a new one"
-  kubectl run curl --stdin --tty --generator=run-pod/v1 --image=radial/busyboxplus:curl
+  kubectl run curl --stdin --tty --generator=run-pod/v1 --image=rekzi/busybox-curl:7.65.3
 else
   echo "Attaching to existing pod..."
   POD=$(kubectl get pods --selector=run=curl -o jsonpath='{.items[*].metadata.name}')
