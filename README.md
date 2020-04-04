@@ -37,3 +37,20 @@ Usage:
 $ kubectl bash
 ```
 
+### kubectl irsa
+
+Usage:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: irsa
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::12345789:role/test
+```
+
+```shell script
+$ kubectl irsa                       
+irsa default
+```
