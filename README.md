@@ -4,7 +4,7 @@ Some of my plugins for `kubectl`.
 
 ## Installation 
 
-To install the plugin, clone the repo and simply move this executable file to anywhere on your `PATH`.
+To install the plugin, clone the repo and simply move this executable files to anywhere on your `PATH`.
 
 ## Check Installation
 
@@ -16,41 +16,10 @@ $ kubectl plugin list
 The following compatible plugins are available:
 
 /home/chris/.local/bin/kubectl-bash
+/home/chris/.local/bin/kubectl-irsa
 ```
 
 ## Plugins
 
-### kubectl bash
-
-When you want to access kubernetes resources inside a cluster, you either:
-
-- need to expose them via e.g. an Ingress
-- run kube-proxy
-- forward ports between your local machine and services running inside the cluster.
-
-Via kubectl bash you can run plain `curl` command without exposing any services or forwarding ports.
-
-It works by running a pod with `radial/busyboxplus:curl` image inside the cluster.
-
-Usage: 
-```shell script
-$ kubectl bash
-```
-
-### kubectl irsa
-
-Usage:
-
-```yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: irsa
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::12345789:role/test
-```
-
-```shell script
-$ kubectl irsa                       
-irsa default
-```
+- [kubectl-bash](./kubectl-bash/README.md)
+- [kubectl-irsa](./kubectl-irsa/README.md)

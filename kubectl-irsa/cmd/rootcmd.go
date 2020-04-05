@@ -16,58 +16,73 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"github.com/spf13/cobra"
+	apiv1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"os"
 	"path/filepath"
-
-	apiv1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const irsaAnnotation = "eks.amazonaws.com/role-arn"
+const annotation = "eks.amazonaws.com/role-arn"
 
 var irsa = &cobra.Command{
 	Use:   "irsa",
 	Short: "Shows all ServiceAccounts that use IAM Roles for Service Accounts",
-	Run:   run,
+	RunE:  run,
 }
 
-func run(cmd *cobra.Command, args []string) {
-	kubeconfig, _ := cmd.Flags().GetString("kubeconfig")
+func run(cmd *cobra.Command, _ []string) error {
+	kubeconfig, err := cmd.Flags().GetString("kubeconfig")
+	if err != nil {
+		return err
+	}
 
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	serviceAccounts := clientset.CoreV1().ServiceAccounts(apiv1.NamespaceAll)
-	serviceAccountList, _ := serviceAccounts.List(metav1.ListOptions{})
-
-	for _, serviceAccount := range serviceAccountList.Items {
-		if _, ok := serviceAccount.Annotations[irsaAnnotation]; ok {
-			fmt.Println(serviceAccount.Name, serviceAccount.Namespace)
-		}
+	serviceAccountList, err := clientset.CoreV1().ServiceAccounts(apiv1.NamespaceAll).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
 	}
+
+	printServiceAccounts(serviceAccountList)
+
+	return nil
 }
 
-func Execute() {
+func init() {
 	if home := homedir.HomeDir(); home != "" {
 		irsa.Flags().String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	} else {
 		irsa.Flags().String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
+}
 
+func Execute() {
 	if err := irsa.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+}
+
+func printServiceAccounts(serviceAccounts *apiv1.ServiceAccountList) {
+	template := "%-16s%-16s%-32s\n"
+	fmt.Printf(template, "NAME", "NAMESPACE", "IAM ROLE")
+	for _, serviceAccount := range serviceAccounts.Items {
+		if iamRole, ok := serviceAccount.Annotations[annotation]; ok {
+			fmt.Printf(template, serviceAccount.Name, serviceAccount.Namespace, iamRole)
+		}
 	}
 }
