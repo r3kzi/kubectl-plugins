@@ -26,6 +26,7 @@ import (
 	"k8s.io/client-go/util/homedir"
 	"os"
 	"path/filepath"
+	"text/tabwriter"
 )
 
 const annotation = "eks.amazonaws.com/role-arn"
@@ -78,11 +79,12 @@ func Execute() {
 }
 
 func printServiceAccounts(serviceAccounts *apiv1.ServiceAccountList) {
-	template := "%-16s%-16s%-32s\n"
-	fmt.Printf(template, "NAME", "NAMESPACE", "IAM ROLE")
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', tabwriter.TabIndent)
+	fmt.Fprintln(w, "NAME\tNAMESPACE\tIAM ROLE\t")
 	for _, serviceAccount := range serviceAccounts.Items {
 		if iamRole, ok := serviceAccount.Annotations[annotation]; ok {
-			fmt.Printf(template, serviceAccount.Name, serviceAccount.Namespace, iamRole)
+			fmt.Fprintln(w, fmt.Sprintf("%s\t%s\t%s\t", serviceAccount.Name, serviceAccount.Namespace, iamRole))
 		}
 	}
+	w.Flush()
 }
